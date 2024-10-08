@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   runApp(MyApp());
@@ -53,12 +54,18 @@ class _FadingTextAnimationState extends State<FadingTextAnimation> with TickerPr
 
   late AnimationController _animationController;
 
-  bool _first = true;
+   final AudioPlayer _audioPlayer = AudioPlayer();
+   final AudioPlayer _backgroundPlayer = AudioPlayer();
+
+ 
   bool _found = false;
+
+
 
   @override
   void initState() {
     super.initState();
+    _playBackgroundMusic();
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: 3),
@@ -67,20 +74,22 @@ class _FadingTextAnimationState extends State<FadingTextAnimation> with TickerPr
 
   @override
   void dispose() {
+     _audioPlayer.dispose();
+    super.dispose();
     _animationController.dispose();
     _controller.dispose();
     _scarecrowController.dispose();
     super.dispose();
   }
 
-  void toggleVisibility() {
-    setState(() {
-      _first = !_first;
-    });
+  void _playBackgroundMusic() async {
+    await _backgroundPlayer.play(AssetSource('background.mp3'), volume: 1.5);  // You can control volume here
+    _backgroundPlayer.setReleaseMode(ReleaseMode.loop);  // Loop the background music
   }
 
-  void _onTrapTap() {
+  void _onTrapTap() async  {
     // Handle trap tap without sound
+     await _audioPlayer.play(AssetSource('ghostsound.mp3'));
   }
 
   void _onCorrectItemTap() {
@@ -107,31 +116,33 @@ class _FadingTextAnimationState extends State<FadingTextAnimation> with TickerPr
                     'You Found It!',
                     style: TextStyle(fontSize: 24, color: Colors.green),
                   ),
-                GestureDetector(
-                  onTap: () {
-                    _animationController.isAnimating
-                        ? _animationController.stop()
-                        : _animationController.repeat();
-                  },
-                  child: Padding(
+                     Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          RotationTransition(
+                             GestureDetector(
+                            onTap:() {_onTrapTap; _animationController.isAnimating
+                        ? _animationController.stop()
+                        : _animationController.repeat(); },
+                         child:  RotationTransition(
                             child: Image.asset('assets/jack.png', height: 150, width: 150),
                             alignment: Alignment.center,
                             turns: _animationController,
                           ),
+                             ),
                           SizedBox(height: 20),
-                          SlideTransition(
+                             GestureDetector(
+                            onTap: _onTrapTap,
+                          child: SlideTransition(
                             position: _offsetAnimation,
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Image.asset('assets/bats.png', height: 150, width: 150),
                             ),
                           ),
+                             ),
                           SizedBox(height: 20),
                           GestureDetector(
                             onTap: _onTrapTap,
@@ -149,16 +160,13 @@ class _FadingTextAnimationState extends State<FadingTextAnimation> with TickerPr
                       ),
                     ),
                   ),
-                ),
+              
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: toggleVisibility,
-        child: Icon(Icons.play_arrow),
-      ),
+     
     );
   }
 }
